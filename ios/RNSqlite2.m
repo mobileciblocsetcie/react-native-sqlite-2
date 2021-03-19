@@ -42,10 +42,11 @@ RCT_EXPORT_MODULE()
                   error: nil];
     
   // deactivate data protection in the folder that contains sqlite db
-  [url setResourceValue: NSFileProtectionNone
-                 forKey: NSURLFileProtectionKey];
+  [url setResourceValue: NSURLFileProtectionNone
+                 forKey: NSURLFileProtectionKey
+                  error: nil];
     
-  NSLog("Update file protection done for uril: %@", url);
+  NSLog(@"Update file protection done for uril: %@", url);
 }
 
 - (dispatch_queue_t)getDatabaseQueue:(NSString *)dbName {
@@ -79,14 +80,20 @@ RCT_EXPORT_MODULE()
     logDebug(@"opening new db");
     NSString *fullDbPath = [self getPathForDB: dbName];
     logDebug(@"full path: %@", fullDbPath);
+    NSURL* db_path_url = [NSURL fileURLWithPath:fullDbPath
+                                         isDirectory:NO];
+      // deactivate data protection in the sqlite file
+      [db_path_url setResourceValue: NSURLFileProtectionNone
+                     forKey: NSURLFileProtectionKey
+                      error: nil];
     const char *sqliteName = [fullDbPath UTF8String];
     sqlite3 *db;
-      // deactivate data protection in sqlite db file
+      // create or open sqlite db with SQLITE_OPEN_FILEPROTECTION_NONE
     if (sqlite3_open_v2(sqliteName, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FILEPROTECTION_NONE, NULL) != SQLITE_OK) {
       logDebug(@"cannot open database: %@", dbName); // shouldn't happen
-      NSLog("Open/Create DB FAILED");
+      NSLog(@"Open/Create DB FAILED");
     };
-    NSLog("Update file protection done for sqlite DB");
+    NSLog(@"Update file protection done for sqlite DB");
 
     cachedDB = [NSValue valueWithPointer:db];
     @synchronized(cachedDatabases) {
