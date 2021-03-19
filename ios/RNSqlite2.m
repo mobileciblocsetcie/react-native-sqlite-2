@@ -40,6 +40,11 @@ RCT_EXPORT_MODULE()
   [url setResourceValue: [NSNumber numberWithBool: YES]
                  forKey: NSURLIsExcludedFromBackupKey
                   error: nil];
+    
+  // deactivate data protection in the folder that contains sqlite db
+  [url setResourceValue: NSFileProtectionNone
+                 forKey: NSURLFileProtectionKey];
+    
 }
 
 - (dispatch_queue_t)getDatabaseQueue:(NSString *)dbName {
@@ -75,7 +80,8 @@ RCT_EXPORT_MODULE()
     logDebug(@"full path: %@", fullDbPath);
     const char *sqliteName = [fullDbPath UTF8String];
     sqlite3 *db;
-    if (sqlite3_open(sqliteName, &db) != SQLITE_OK) {
+      // deactivate data protection in sqlite db file
+    if (sqlite3_open_v2(sqliteName, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FILEPROTECTION_NONE, NULL) != SQLITE_OK) {
       logDebug(@"cannot open database: %@", dbName); // shouldn't happen
     };
     cachedDB = [NSValue valueWithPointer:db];
